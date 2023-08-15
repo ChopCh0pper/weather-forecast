@@ -10,11 +10,14 @@ import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.activityViewModels
 import com.example.weatherforecast.API.APIConstance
 import com.example.weatherforecast.API.APIService
 import com.example.weatherforecast.API.WeatherData
+import com.example.weatherforecast.MainViewModel
 import com.example.weatherforecast.R
 import com.example.weatherforecast.adapters.VpAdapter
+import com.example.weatherforecast.constance.Constance
 import com.example.weatherforecast.databinding.FragmentMainBinding
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +38,7 @@ class MainFragment : Fragment() {
     private lateinit var pLauncher: ActivityResultLauncher<String>
     private lateinit var binding: FragmentMainBinding
     private lateinit var apiService: APIService
+    private val model: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,6 +56,7 @@ class MainFragment : Fragment() {
         initVpView()
         initRetrofit()
         getWeatherForecast()
+        updateCurrentCard()
     }
 
     private fun initVpView() = with(binding) {
@@ -85,14 +90,16 @@ class MainFragment : Fragment() {
                 APIConstance.Q,
                 APIConstance.DAYS
             )
-            parseWeatherData(forecast)
+            requireActivity().runOnUiThread {
+                parseWeatherData(forecast)
+            }
         }
     }
 
     private fun parseWeatherData(result: String) {
         val mainObject = JSONObject(result)
         val list = parseDaysData(mainObject)
-        parseCurrentData(mainObject)
+        parseCurrentData(mainObject, list[0])
 
     }
 
@@ -107,33 +114,46 @@ class MainFragment : Fragment() {
                 day.getJSONObject("day")
                     .getJSONObject("condition").getString("text"),
                 "",
-                day.getJSONObject("day").getString("maxtemp_c"),
-                day.getJSONObject("day").getString("mintemp_c"),
+                day.getJSONObject("day").getString("maxtemp_c")
+                    .toFloat().toInt().toString()
+                        + Constance.DEGREE_C,
+                day.getJSONObject("day").getString("mintemp_c")
+                    .toFloat().toInt().toString()
+                        + Constance.DEGREE_C,
                 day.getJSONObject("day")
                     .getJSONObject("condition").getString("icon"),
                 day.getJSONArray("hour").toString()
             )
             list.add(item)
         }
+        model.liveDataList.value = list
         return list
     }
 
-    private fun parseHoursData(mainObject: JSONObject) {
-
-    }
-
-    private fun parseCurrentData(mainObject: JSONObject) {
+    private fun parseCurrentData(mainObject: JSONObject, day: WeatherData) {
         val item = WeatherData(
             mainObject.getJSONObject("location").getString("name"),
+            mainObject.getJSONObject("current").getString("last_updated"),
+            mainObject.getJSONObject("current").getJSONObject("condition").getString("text"),
+            mainObject.getJSONObject("current").getString("temp_c")
+                .toFloat().toInt().toString()
+                    + Constance.DEGREE_C,
             "",
-            mainObject.getJSONObject("current")
-                .getJSONObject("condition").getString("text"),
-            mainObject.getJSONObject("current").getString("temp_c"),
             "",
             "",
-            "",
-            ""
+            day.hours
         )
+        model.liveDataCurrent.value = item
+        Log.d("Tag", "${item.hours}")
+    }
+
+    private fun updateCurrentCard() = with(binding) {
+        model.liveDataCurrent.observe(viewLifecycleOwner) {
+            tvLocation.text = it.city
+            tvCurrentTempC.text = it.currentTemp.ifEmpty { "${it.minTemp} / ${it.maxTemp}" }
+            tvCurrentCondition.text = it.condition
+            tvDate.text = it.time
+        }
     }
 
     private fun permissionListener() {

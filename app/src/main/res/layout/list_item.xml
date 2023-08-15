@@ -49,14 +49,14 @@
             app:srcCompat="@drawable/ic_launcher_foreground" />
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/tvTemp"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:fontFamily="@font/aubrey"
             android:gravity="center"
             android:text="27"
             android:textColor="@color/white"
-            android:textSize="30sp"
+            android:textSize="25sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/imageView"
             app:layout_constraintStart_toEndOf="@+id/tvDate"
