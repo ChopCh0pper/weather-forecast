@@ -48,7 +48,7 @@ class HoursFragment : Fragment() {
                 hour.getString("time"),
                 hour.getJSONObject("condition").getString("text"),
                 hour.getString("temp_c") + Constance.DEGREE_C,
-                "",r
+                "",
                 "",
                 hour.getJSONObject("condition").getString("icon"),
                 ""
